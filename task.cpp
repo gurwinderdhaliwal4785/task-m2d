@@ -5,8 +5,7 @@
 #include <queue>
 #include <chrono>
 #include <ctime>
-#include <random>
-#include <algorithm>
+#include <sstream>
 #include <map>
 
 using namespace std;
@@ -23,13 +22,19 @@ map<int, int> congested_traffic_lights;
 
 // Producer function
 void produce_traffic_data() {
-    while (true) {
-        // Simulate traffic signal data generation
-        auto now = chrono::system_clock::now();
-        auto now_time = chrono::system_clock::to_time_t(now);
-        string timestamp = ctime(&now_time);
-        int traffic_light_id = rand() % NUM_TRAFFIC_LIGHTS + 1;
-        int cars_passed = rand() % 50 + 1;
+    ifstream input_file("input.txt");
+    if (!input_file.is_open()) {
+        cerr << "Error opening input file." << endl;
+        return;
+    }
+
+    string line;
+    while (getline(input_file, line)) {
+        istringstream iss(line);
+        string date, time;
+        int traffic_light_id, cars_passed;
+        iss >> date >> time >> traffic_light_id >> cars_passed;
+        string timestamp = date + " " + time;
 
         // Add data to buffer
         {
@@ -42,7 +47,9 @@ void produce_traffic_data() {
         }
         this_thread::sleep_for(chrono::milliseconds(rand() % 1000 + 100)); // Simulate variable time to produce data
     }
+    input_file.close();
 }
+
 
 // Consumer function
 void consume_traffic_data() {
@@ -96,9 +103,9 @@ void consume_traffic_data() {
     }
 }
 
-int main() {
-    srand(time(nullptr));
 
+
+int main() {
     // Create producer and consumer threads
     thread producer_thread(produce_traffic_data);
     thread consumer_thread(consume_traffic_data);
